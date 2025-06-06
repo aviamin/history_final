@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US History Study Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.2em;
+        }
+        .controls {
+            padding: 20px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #404040;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid;
+            border-radius: 20px;
+            background: #2a2a2a;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            color: white !important;
+        }
+        .filter-btn.not-started { border-color: #6c757d; color: #6c757d; }
+        .filter-btn.not-started.active { background-color: #6c757d; }
+        .filter-btn.started { border-color: #dc3545; color: #dc3545; }
+        .filter-btn.started.active { background-color: #dc3545; }
+        .filter-btn.reviewing { border-color: #ffc107; color: #ffc107; }
+        .filter-btn.reviewing.active { background-color: #ffc107; color: #212529; }
+        .filter-btn.mastered { border-color: #28a745; color: #28a745; }
+        .filter-btn.mastered.active { background-color: #28a745; }
+        .filter-btn.mystery { border-color: #6f42c1; color: #6f42c1; }
+        .filter-btn.mystery.active { background-color: #6f42c1; }
+        .reset-btn {
+            padding: 8px 16px;
+            border: 2px solid #dc3545;
+            border-radius: 20px;
+            background: #2a2a2a;
+            color: #dc3545;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-left: 10px;
+        }
+        .reset-btn:hover {
+            background-color: #dc3545;
+            color: #2a2a2a;
+        }
+        .progress-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .progress-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .progress-item.not-started { background-color: #6c757d; color: white; }
+        .progress-item.started { background-color: #dc3545; color: white; }
+        .progress-item.reviewing { background-color: #ffc107; color: #212529; }
+        .progress-item.mastered { background-color: #28a745; color: white; }
+        .progress-item.mystery { background-color: #6f42c1; color: white; }
+        
+        .sections-container {
+            padding: 20px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            border: 2px solid;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .section.formation { border-color: #4CAF50; }
+        .section.constitution { border-color: #2196F3; }
+        .section.republic { border-color: #FF9800; }
+        .section.nationalism { border-color: #9C27B0; }
+        .section.war { border-color: #F44336; }
+        
+        .section-header {
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .section.formation .section-header { background-color: #4CAF50; }
+        .section.constitution .section-header { background-color: #2196F3; }
+        .section.republic .section-header { background-color: #FF9800; }
+        .section.nationalism .section-header { background-color: #9C27B0; }
+        .section.war .section-header { background-color: #F44336; }
+        
+        .terms-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .terms-table td {
+            padding: 0;
+            vertical-align: top;
+            width: 25%; /* 4 columns */
+        }
+        
+        .term-item {
+            display: flex;
+            align-items: center;
+            margin: 8px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            font-size: 15px;
+            min-height: 50px;
+        }
+        
+        .term-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .term-item.not-started { 
+            border-left: 4px solid #6c757d; 
+            background-color: rgba(108, 117, 125, 0.2);
+        }
+        .term-item.started { 
+            border-left: 4px solid #dc3545; 
+            background-color: rgba(220, 53, 69, 0.2);
+            border-color: rgba(220, 53, 69, 0.4);
+        }
+        .term-item.reviewing { 
+            border-left: 4px solid #ffc107; 
+            background-color: rgba(255, 193, 7, 0.2);
+            border-color: rgba(255, 193, 7, 0.4);
+        }
+        .term-item.mastered { 
+            border-left: 4px solid #28a745; 
+            background-color: rgba(40, 167, 69, 0.2);
+            border-color: rgba(40, 167, 69, 0.4);
+        }
+        .term-item.mystery { 
+            border-left: 4px solid #6f42c1; 
+            background-color: rgba(111, 66, 193, 0.2);
+            border-color: rgba(111, 66, 193, 0.4);
+        }
+        .term-item.hidden { display: none; }
+        
+        .status-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 12px;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .status-dot:hover {
+            transform: scale(1.2);
+        }
+        .status-dot.not-started { background-color: #6c757d; }
+        .status-dot.started { background-color: #dc3545; }
+        .status-dot.reviewing { background-color: #ffc107; }
+        .status-dot.mastered { background-color: #28a745; }
+        .status-dot.mystery { background-color: #6f42c1; }
+        
+        .term-text {
+            flex: 1;
+            font-weight: 600;
+            color: #e0e0e0;
+            line-height: 1.4;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .term-item.started .term-text { 
+            color: #ff6b6b; 
+            font-weight: 700;
+        }
+        .term-item.reviewing .term-text { 
+            color: #ffd93d; 
+            font-weight: 700;
+        }
+        .term-item.mastered .term-text { 
+            color: #51cf66; 
+            font-weight: 700;
+        }
+        .term-item.mystery .term-text { 
+            color: #b197fc; 
+            font-weight: 700;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        .save-indicator.show {
+            opacity: 1;
+        }
+        
+        @media (max-width: 1200px) {
+            .terms-table td {
+                width: 33.33%; /* 3 columns on medium screens */
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .terms-table td {
+                width: 50%; /* 2 columns on small screens */
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .terms-table td {
+                width: 100%; /* 1 column on very small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="save-indicator" id="save-indicator">Progress Saved!</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>US History 1 Study Tracker</h1>
+            <p>Click anywhere on a term to update your study progress!</p>
+            <p style="font-size: 0.9em; opacity: 0.9;">Your progress is automatically saved and will persist between sessions</p>
+            <p style="font-size: 0.8em; opacity: 0.7; margin-top: 10px;">Made by Avi</p>
+        </div>
+        
+        <div class="controls">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot not-started"></div>
+                    <span>Not Started</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot started"></div>
+                    <span>Started</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot reviewing"></div>
+                    <span>Reviewing</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot mastered"></div>
+                    <span>Mastered</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot mystery"></div>
+                    <span>Mystery/Special</span>
+                </div>
+            </div>
+            
+            <div class="filter-buttons">
+                <button class="filter-btn show-all active" onclick="filterTerms('all')">Show All</button>
+                <button class="filter-btn not-started" onclick="filterTerms('not-started')">Not Started</button>
+                <button class="filter-btn started" onclick="filterTerms('started')">Started</button>
+                <button class="filter-btn reviewing" onclick="filterTerms('reviewing')">Reviewing</button>
+                <button class="filter-btn mastered" onclick="filterTerms('mastered')">Mastered</button>
+                <button class="filter-btn mystery" onclick="filterTerms('mystery')">Mystery/Special</button>
+                <button class="reset-btn" onclick="resetAllProgress()">Reset All</button>
+            </div>
+            
+            <div class="progress-summary" id="progress-summary">
+                <div class="progress-item not-started" id="count-not-started">Not Started: 0</div>
+                <div class="progress-item started" id="count-started">Started: 0</div>
+                <div class="progress-item reviewing" id="count-reviewing">Reviewing: 0</div>
+                <div class="progress-item mastered" id="count-mastered">Mastered: 0</div>
+                <div class="progress-item mystery" id="count-mystery">Mystery/Special: 0</div>
+            </div>
+        </div>
+        
+        <div class="sections-container">
+            <div class="section formation">
+                <div class="section-header">Formation of Colonies & Revolution</div>
+                <table class="terms-table" id="formation-table"></table>
+            </div>
+            
+            <div class="section constitution">
+                <div class="section-header">Creating the Constitution</div>
+                <table class="terms-table" id="constitution-table"></table>
+            </div>
+            
+            <div class="section republic">
+                <div class="section-header">The New Republic</div>
+                <table class="terms-table" id="republic-table"></table>
+            </div>
+            
+            <div class="section nationalism">
+                <div class="section-header">Nationalism & Sectionalism</div>
+                <table class="terms-table" id="nationalism-table"></table>
+            </div>
+            
+            <div class="section war">
+                <div class="section-header">Mexican-American War & Union Crisis</div>
+                <table class="terms-table" id="war-table"></table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const studyTerms = {
+            formation: [
+                "Roanoke and Jamestown", "John Rolfe and John Smith", "Puritans and the Mayflower Compact",
+                "Founding of the 13 original colonies", "House of Burgesses", "Indentured Servants",
+                "Rise of slavery, Triangular Trade & the Middle Passage", "Salutary neglect", "French and Indian War",
+                "Navigation Acts", "Proclamation Line of 1763", "Common Sense by Thomas Paine",
+                "Acts—Sugar, Stamp, Townshend Duties, Tea, Intolerable", "Boston Massacre", "Types of protest",
+                "Boston Tea Party and the Sons of Liberty", "First and Second Continental Congresses", "Olive Branch Petition",
+                "Declaration of Independence", "George Washington and the Founding Fathers",
+                "Battles—Lexington and Concord, Bunker Hill, Trenton, Yorktown, Saratoga", "Styles of fighting (strengths/weaknesses)", "Treaty of Paris"
+            ],
+            constitution: [
+                "Articles of Confederation: definition & problems", "Northwest Ordinance of 1787", "Shays' Rebellion",
+                "Constitutional Convention", "Constitution (vs. A. of C.)", "New Jersey Plan and Virginia Plan",
+                "James Madison", "Great Compromise", "3/5 Compromise", "Federalists vs. Antifederalists",
+                "Bill of Rights", "Amendment", "Ratify", "Federalism; Delegated & Reserved Powers",
+                "3 Branches of government", "Checks and Balances"
+            ],
+            republic: [
+                "Washington's Presidency", "Washington's precedents", "Cabinet", "Whiskey Rebellion",
+                "Hamilton's Financial Plan", "Excise tax", "Hamilton's National Bank", "Loose vs. Strict Interpretation",
+                "Federalists vs. Democratic-Republicans", "Impressment and Jay's Treaty", "Washington's Farewell Address",
+                "Adam's Presidency", "XYZ Affair", "Alien and Sedition Acts", "Election of 1800",
+                "Louisiana Purchase", "Lewis and Clark's Expedition", "Aaron Burr", "John Marshall's Court",
+                "Marbury v. Madison & Judicial Review", "Embargo Act and effect"
+            ],
+            nationalism: [
+                "Causes of the War of 1812", "War Hawks", "Henry Clay", "John C. Calhoun",
+                "War of 1812 (people and major battles)", "Treaty of Ghent", "Spoils System", "Era of Good Feelings",
+                "American System", "Whigs", "Nationalism", "Adams-Onis Treaty", "Sectionalism",
+                "Missouri Compromise", "Monroe Doctrine", "Election of 1828", "Manifest Destiny",
+                "Andrew Jackson's presidency & early life", "Nullification Crisis and response", "Trail of Tears and Indian Removal Act",
+                "War on the National Bank", "Gold Rush"
+            ],
+            war: [
+                "Sam Houston", "Antonio Lopez de Santa Anna", "Lone Star Republic", "The Alamo",
+                "James K. Polk", "The Mexican-American War", "Treaty of Guadalupe Hidalgo", "Compromise of 1850",
+                "Popular Sovereignty", "Fugitive Slave Act", "Dred Scott Decision", "Underground Railroad",
+                "Harriet Tubman", "Harriet Beecher Stowe", "Kansas-Nebraska Act", "Election of 1860",
+                "Abraham Lincoln", "John Brown & Harpers Ferry"
+            ]
+        };
+
+        let termStatuses = {};
+        let currentFilter = 'all';
+        const STORAGE_KEY = 'us-history-study-tracker';
+
+        // Load saved progress from localStorage
+        function loadProgress() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    termStatuses = JSON.parse(saved);
+                    console.log('Loaded saved progress:', Object.keys(termStatuses).length, 'terms');
+                } catch (e) {
+                    console.error('Error loading saved progress:', e);
+                    termStatuses = {};
+                }
+            }
+        }
+
+        // Save progress to localStorage
+        function saveProgress() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(termStatuses));
+                showSaveIndicator();
+            } catch (e) {
+                console.error('Error saving progress:', e);
+            }
+        }
+
+        // Show save indicator
+        function showSaveIndicator() {
+            const indicator = document.getElementById('save-indicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
+        function initializeTerms() {
+            // Load any existing progress first
+            loadProgress();
+            
+            Object.keys(studyTerms).forEach(section => {
+                const table = document.getElementById(`${section}-table`);
+                const terms = studyTerms[section];
+                const termsPerRow = 4; // Adjust based on screen size with CSS
+                
+                // Create rows
+                for (let i = 0; i < terms.length; i += termsPerRow) {
+                    const row = document.createElement('tr');
+                    
+                    // Fill the row with up to termsPerRow terms
+                    for (let j = 0; j < termsPerRow; j++) {
+                        const cell = document.createElement('td');
+                        
+                        if (i + j < terms.length) {
+                            const term = terms[i + j];
+                            const termId = `${section}-${i + j}`;
+                            
+                            // Use saved status or default to 'not-started'
+                            if (!termStatuses[termId]) {
+                                termStatuses[termId] = 'not-started';
+                            }
+                            
+                            const status = termStatuses[termId];
+                            
+                            const termDiv = document.createElement('div');
+                            termDiv.className = `term-item ${status}`;
+                            termDiv.id = termId;
+                            termDiv.onclick = () => cycleStatus(termId);
+                            termDiv.innerHTML = `
+                                <div class="status-dot ${status}"></div>
+                                <div class="term-text">${term}</div>
+                            `;
+                            cell.appendChild(termDiv);
+                        }
+                        
+                        row.appendChild(cell);
+                    }
+                    
+                    table.appendChild(row);
+                }
+            });
+            updateProgressSummary();
+        }
+
+        function cycleStatus(termId) {
+            const statuses = ['not-started', 'started', 'reviewing', 'mastered', 'mystery'];
+            const currentIndex = statuses.indexOf(termStatuses[termId]);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            const newStatus = statuses[nextIndex];
+            
+            termStatuses[termId] = newStatus;
+            
+            const termElement = document.getElementById(termId);
+            const dotElement = termElement.querySelector('.status-dot');
+            
+            // Update classes
+            termElement.className = `term-item ${newStatus}`;
+            dotElement.className = `status-dot ${newStatus}`;
+            
+            // Save progress immediately after change
+            saveProgress();
+            
+            updateProgressSummary();
+            
+            // Apply current filter
+            if (currentFilter !== 'all') {
+                filterTerms(currentFilter);
+            }
+        }
+
+        function updateProgressSummary() {
+            const counts = {
+                'not-started': 0,
+                'started': 0,
+                'reviewing': 0,
+                'mastered': 0,
+                'mystery': 0
+            };
+            
+            Object.values(termStatuses).forEach(status => {
+                counts[status]++;
+            });
+            
+            Object.keys(counts).forEach(status => {
+                const displayName = status === 'mystery' ? 'Mystery/Special' : 
+                                  status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ');
+                document.getElementById(`count-${status}`).textContent = `${displayName}: ${counts[status]}`;
+            });
+        }
+
+        function filterTerms(filter) {
+            currentFilter = filter;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (filter === 'all') {
+                document.querySelector('.filter-btn.show-all').classList.add('active');
+            } else {
+                document.querySelector(`.filter-btn.${filter}`).classList.add('active');
+            }
+            
+            // Show/hide terms
+            document.querySelectorAll('.term-item').forEach(term => {
+                if (filter === 'all' || term.classList.contains(filter)) {
+                    term.classList.remove('hidden');
+                } else {
+                    term.classList.add('hidden');
+                }
+            });
+        }
+
+        function resetAllProgress() {
+            if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+                // Reset all statuses to 'not-started'
+                Object.keys(termStatuses).forEach(termId => {
+                    termStatuses[termId] = 'not-started';
+                    
+                    const termElement = document.getElementById(termId);
+                    const dotElement = termElement.querySelector('.status-dot');
+                    
+                    // Update classes
+                    termElement.className = 'term-item not-started';
+                    dotElement.className = 'status-dot not-started';
+                });
+                
+                // Save the reset progress
+                saveProgress();
+                updateProgressSummary();
+                
+                // Apply current filter
+                if (currentFilter !== 'all') {
+                    filterTerms(currentFilter);
+                }
+                
+                alert('All progress has been reset!');
+            }
+        }
+
+        // Initialize on page load
+        initializeTerms();
+
+        // Optional: Save progress periodically (every 30 seconds) as a backup
+        setInterval(saveProgress, 30000);
+    </script>
+</body>
+</html>
